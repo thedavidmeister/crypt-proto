@@ -1,2 +1,2 @@
-scrypt-demo
+crypt-proto
 ===========
