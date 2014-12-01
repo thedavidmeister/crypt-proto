@@ -8,20 +8,29 @@
       return dcodeIO.bcrypt;
     },
 
-    random: function random() {
-      return isaac.random();
+    get salt() {
+      return _this().bcrypt.genSaltSync();
+    },
+
+    get randomFallback() {
+      return isaac.random;
     },
 
     hash: function hash(password) {
-      var salt = _this().bcrypt.genSaltSync();
-      return _this().bcrypt.hashSync(password, salt);
+      return _this().bcrypt.hashSync(password, _this().salt);
     },
 
-    /**
-     * Ready event handler.
-     */
-    ready: function ready(e) {
-      console.log(_this().rand);
+    compare: function compare(password, hash) {
+      return _this().bcrypt.compareSync(password, hash);
+    },
+
+    createUser: function createUser(user) {
+      var i;
+      for (i in user.secrets) {
+        user.secrets[i] = _this().hash(user.secrets[i]);
+      }
+
+      console.log(user);
     }
 
   };
@@ -30,6 +39,10 @@
     return window.dostuff;
   }
 
-  $(_this().ready);
+  $(_this().createUser({
+    id: 'thedavidmeister',
+    email: 'foo@example.com',
+    secrets: ['one', 'two', 'three']
+  }));
 
 })(jQuery);
