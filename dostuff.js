@@ -68,14 +68,16 @@
   // $(_this().init());
   //
   $(function() {
-    new User({
+    var foo = new User({
       passwords: {
         'default': 'one',
-        'backup': 'two'
+        // 'backup': 'two'
       }
     }, function() {
       console.log('bam');
     });
+
+    console.log(foo.data());
   });
 
   // $(_this().createUser({

@@ -33,8 +33,6 @@
     // Stores hashed passwords.
     var hashes = {};
 
-    console.log(passwords);
-
     /**
      * Seeds the ISAAC CSPRNG.
      */
@@ -44,7 +42,7 @@
       var seedLen = 512;
 
       return $.Deferred(function ( d ) {
-
+        console.log('async');
         $.get(apiBase + '/random/' + seedLen, {}, function() {
 
           // Seed ISAAC with the random bytes collected.
@@ -53,6 +51,9 @@
           // Run a random number once before use.
           isaac.random();
 
+          // Allow bcrypt to use ISAAC for random number generation.
+          bcrypt.setRandomFallback(isaac.random);
+
           d.resolve();
 
         });
@@ -61,88 +62,62 @@
 
     }
 
+    /**
+     * Regenerate a single password hash.
+     */
+    function genHash( passwordKey ) {
+      var saltRounds = 8;
 
+      return $.Deferred(function (d) {
+        bcrypt.hash(passwords[passwordKey], saltRounds, function ( err, hash ) {
+          console.log(hash);
+          hashes[passwordKey] = hash;
+
+          d.resolve();
+
+        }, function ( progress ) {
+          console.log(progress);
+        });
+      }).promise();
+    }
 
     /**
      * Regenerates all password hashes.
      *
      * Overwrites any previously generated hashes.
      */
-    _this.genHashes = function genHashes () {
-
-      // Number of rounds to salt each hash.
-      var saltRounds = 10;
+    _this.genHashes = function genHashes ( callback ) {
 
       // Array to hold our deferred objects.
       var d = [];
 
-      // Loop over the passwords...
-      for (var p in passwords) {
-        console.log(passwords[p]);
-
-        // Create a deferred object.
-        d[p] = new $.Deferred();
-
-        hashes[p] = bcrypt.hash(passwords[p], saltRounds, function (err, hash) {
-          hashes[p] = hash;
-          console.log(hash);
-
-          // Resolve this object.
-          d[p].resolve();
-
-        });
-      }
-
+      // Array to store the promises of generated hashes.
       var promises = [];
-      for (var i in d) {
-        promises[i] = d[i].promise();
+
+      // // Loop over the passwords...
+      for (var p in passwords) {
+        promises.push(genHash(p));
       }
-      console.log(promises);
+
       $.when.apply($, promises).done(function () {
-        console.log('wot');
-        console.log(hashes);
+        if (callback){
+          callback();
+        }
       });
     };
 
     /**
-     * Generates a salt for use in bcrypt.
+     * Get the public user data.
      */
-    function genBcryptSalt() {
-
-      var saltRounds = 10;
-
-      return $.Deferred(function ( d ) {
-
-        dcodeIO.bcrypt.genSalt(saltRounds, function(err, salt) {
-
-          _this.salt = salt;
-
-          d.resolve();
-
-        });
-
-      }).promise();
-
-    }
+    _this.data = function data () {
+      return {
+        'hashes': hashes
+      };
+    };
 
     $.when(seedISAAC()).done(function () {
-
-      // An implementation detail of the bcrypt library - it needs a fallback
-      // CSPRNG.
-      bcrypt.setRandomFallback(isaac.random);
-
       _this.genHashes();
     });
-
-    // $.when(seedISAAC()).done(function () {
-
-    //   dcodeIO.bcrypt.setRandomFallback(isaac.random);
-
-    //   $.when(genBcryptSalt()).done(function() {
-    //     callback();
-    //   });
-
-    // });
 
   };
 
