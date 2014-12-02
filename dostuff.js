@@ -3,48 +3,6 @@
 
   window.dostuff = {
 
-    get bcrypt() {
-      dcodeIO.bcrypt.setRandomFallback(_this().randomFallback);
-      return dcodeIO.bcrypt;
-    },
-
-    get apiURL() {
-      return 'http://vagrant.ld';
-    },
-
-    randomFallback: function randomFallback(len) {
-      return _this().random(len);
-    },
-
-    randomBytes: function randomBytes(len) {
-      return _this().api('random', len);
-    },
-
-    get seedLen() {
-      return 512;
-    },
-
-    get saltRounds() {
-      return 10;
-    },
-
-    get seed() {
-      return this._seed;
-    },
-
-    get prng() {
-      return window.isaac;
-    },
-
-    set seed(s) {
-      if (s.length < this.seedLen) {
-        throw 'Seed length less than ' + this.seedLen;
-      }
-
-      this._seed = s;
-      console.log(this);
-    },
-
     hash: function hash(password) {
       return _this().bcrypt.hashSync(password, _this().salt);
     },
@@ -107,7 +65,18 @@
     return window.dostuff;
   }
 
-  $(_this().init());
+  // $(_this().init());
+  //
+  $(function() {
+    new User({
+      passwords: {
+        'default': 'one',
+        'backup': 'two'
+      }
+    }, function() {
+      console.log('bam');
+    });
+  });
 
   // $(_this().createUser({
   //   id: 'thedavidmeister',
